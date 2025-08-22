@@ -1,0 +1,17 @@
+# Development dependencies
+-r requirements.txt
+
+# Code quality
+black>=23.11.0
+flake8>=6.1.0
+isort>=5.12.0
+mypy>=1.7.0
+
+# Documentation
+mkdocs>=1.5.3
+mkdocs-material>=9.4.0
+mkdocs-mermaid2-plugin>=1.1.1
+
+# Development tools
+pre-commit>=3.5.0
+watchdog>=3.0.0

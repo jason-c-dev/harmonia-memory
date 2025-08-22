@@ -1,0 +1,482 @@
+{
+  "personal": {
+    "success_rate": 100.0,
+    "successful": 3,
+    "total": 3,
+    "details": [
+      {
+        "success": true,
+        "count": 1,
+        "memories": [
+          {
+            "content": "User's name is Jason",
+            "type": "personal",
+            "confidence": 0.6736
+          }
+        ],
+        "metadata": {
+          "extraction_mode": "moderate",
+          "memory_types_requested": [
+            "relational"
+          ],
+          "memories_before_filtering": 1,
+          "memories_after_filtering": 1,
+          "avg_confidence": 0.6736,
+          "processing_steps_completed": 9
+        }
+      },
+      {
+        "success": true,
+        "count": 1,
+        "memories": [
+          {
+            "content": "User's name is Sarah Johnson",
+            "type": "personal",
+            "confidence": 0.7501714285714285
+          }
+        ],
+        "metadata": {
+          "extraction_mode": "moderate",
+          "memory_types_requested": [
+            "relational"
+          ],
+          "memories_before_filtering": 1,
+          "memories_after_filtering": 1,
+          "avg_confidence": 0.7501714285714285,
+          "processing_steps_completed": 9
+        }
+      },
+      {
+        "success": true,
+        "count": 1,
+        "memories": [
+          {
+            "content": "User's age is 28",
+            "type": "personal",
+            "confidence": 0.6078857142857143
+          }
+        ],
+        "metadata": {
+          "extraction_mode": "moderate",
+          "memory_types_requested": [
+            "relational"
+          ],
+          "memories_before_filtering": 1,
+          "memories_after_filtering": 1,
+          "avg_confidence": 0.6078857142857143,
+          "processing_steps_completed": 9
+        }
+      }
+    ]
+  },
+  "temporal": {
+    "success_rate": 100.0,
+    "successful": 3,
+    "total": 3,
+    "details": [
+      {
+        "success": true,
+        "count": 1,
+        "memories": [
+          {
+            "content": "Meeting tomorrow at 2pm",
+            "type": "temporal",
+            "confidence": 0.8376
+          }
+        ],
+        "metadata": {
+          "extraction_mode": "moderate",
+          "memory_types_requested": [
+            "temporal",
+            "relational"
+          ],
+          "memories_before_filtering": 1,
+          "memories_after_filtering": 1,
+          "avg_confidence": 0.8376,
+          "processing_steps_completed": 9
+        }
+      },
+      {
+        "success": true,
+        "count": 1,
+        "memories": [
+          {
+            "content": "User's birthday is March 15th",
+            "type": "personal",
+            "confidence": 0.8476
+          }
+        ],
+        "metadata": {
+          "extraction_mode": "moderate",
+          "memory_types_requested": [
+            "temporal",
+            "relational"
+          ],
+          "memories_before_filtering": 1,
+          "memories_after_filtering": 1,
+          "avg_confidence": 0.8476,
+          "processing_steps_completed": 9
+        }
+      },
+      {
+        "success": true,
+        "count": 1,
+        "memories": [
+          {
+            "content": "Deadline is next Friday",
+            "type": "temporal",
+            "confidence": 0.7876000000000001
+          }
+        ],
+        "metadata": {
+          "extraction_mode": "moderate",
+          "memory_types_requested": [
+            "temporal",
+            "relational"
+          ],
+          "memories_before_filtering": 1,
+          "memories_after_filtering": 1,
+          "avg_confidence": 0.7876000000000001,
+          "processing_steps_completed": 9
+        }
+      }
+    ]
+  },
+  "factual": {
+    "success_rate": 100.0,
+    "successful": 2,
+    "total": 2,
+    "details": [
+      {
+        "success": true,
+        "count": 1,
+        "memories": [
+          {
+            "content": "Python was created in 1991",
+            "type": "factual",
+            "confidence": 0.8696
+          }
+        ],
+        "metadata": {
+          "extraction_mode": "moderate",
+          "memory_types_requested": [
+            "relational"
+          ],
+          "memories_before_filtering": 1,
+          "memories_after_filtering": 1,
+          "avg_confidence": 0.8696,
+          "processing_steps_completed": 9
+        }
+      },
+      {
+        "success": true,
+        "count": 1,
+        "memories": [
+          {
+            "content": "Water freezes at 0 degrees Celsius",
+            "type": "factual",
+            "confidence": 0.822
+          }
+        ],
+        "metadata": {
+          "extraction_mode": "moderate",
+          "memory_types_requested": [
+            "relational"
+          ],
+          "memories_before_filtering": 1,
+          "memories_after_filtering": 1,
+          "avg_confidence": 0.822,
+          "processing_steps_completed": 9
+        }
+      }
+    ]
+  },
+  "relational": {
+    "success_rate": 100.0,
+    "successful": 3,
+    "total": 3,
+    "details": [
+      {
+        "success": true,
+        "count": 1,
+        "memories": [
+          {
+            "content": "User's sister is named Emily",
+            "type": "personal",
+            "confidence": 0.8396
+          }
+        ],
+        "metadata": {
+          "extraction_mode": "moderate",
+          "memory_types_requested": [
+            "relational"
+          ],
+          "memories_before_filtering": 1,
+          "memories_after_filtering": 1,
+          "avg_confidence": 0.8396,
+          "processing_steps_completed": 9
+        }
+      },
+      {
+        "success": true,
+        "count": 1,
+        "memories": [
+          {
+            "content": "User has a dog named Max",
+            "type": "relational",
+            "confidence": 0.8516
+          }
+        ],
+        "metadata": {
+          "extraction_mode": "moderate",
+          "memory_types_requested": [
+            "relational"
+          ],
+          "memories_before_filtering": 1,
+          "memories_after_filtering": 1,
+          "avg_confidence": 0.8516,
+          "processing_steps_completed": 9
+        }
+      },
+      {
+        "success": true,
+        "count": 1,
+        "memories": [
+          {
+            "content": "User's manager is John",
+            "type": "factual",
+            "confidence": 0.7336
+          }
+        ],
+        "metadata": {
+          "extraction_mode": "moderate",
+          "memory_types_requested": [
+            "relational"
+          ],
+          "memories_before_filtering": 1,
+          "memories_after_filtering": 1,
+          "avg_confidence": 0.7336,
+          "processing_steps_completed": 9
+        }
+      }
+    ]
+  },
+  "preference": {
+    "success_rate": 100.0,
+    "successful": 3,
+    "total": 3,
+    "details": [
+      {
+        "success": true,
+        "count": 1,
+        "memories": [
+          {
+            "content": "User loves pizza",
+            "type": "preference",
+            "confidence": 0.6036
+          }
+        ],
+        "metadata": {
+          "extraction_mode": "moderate",
+          "memory_types_requested": [
+            "emotional",
+            "preference",
+            "relational"
+          ],
+          "memories_before_filtering": 1,
+          "memories_after_filtering": 1,
+          "avg_confidence": 0.6036,
+          "processing_steps_completed": 9
+        }
+      },
+      {
+        "success": true,
+        "count": 1,
+        "memories": [
+          {
+            "content": "User dislikes mushrooms",
+            "type": "preference",
+            "confidence": 0.6036
+          }
+        ],
+        "metadata": {
+          "extraction_mode": "moderate",
+          "memory_types_requested": [
+            "emotional",
+            "preference",
+            "relational"
+          ],
+          "memories_before_filtering": 1,
+          "memories_after_filtering": 1,
+          "avg_confidence": 0.6036,
+          "processing_steps_completed": 9
+        }
+      },
+      {
+        "success": true,
+        "count": 1,
+        "memories": [
+          {
+            "content": "User's favorite color is blue",
+            "type": "preference",
+            "confidence": 0.7996
+          }
+        ],
+        "metadata": {
+          "extraction_mode": "moderate",
+          "memory_types_requested": [
+            "relational"
+          ],
+          "memories_before_filtering": 1,
+          "memories_after_filtering": 1,
+          "avg_confidence": 0.7996,
+          "processing_steps_completed": 9
+        }
+      }
+    ]
+  },
+  "emotional": {
+    "success_rate": 100.0,
+    "successful": 2,
+    "total": 2,
+    "details": [
+      {
+        "success": true,
+        "count": 1,
+        "memories": [
+          {
+            "content": "User is excited about a project",
+            "type": "emotional",
+            "confidence": 0.7276
+          }
+        ],
+        "metadata": {
+          "extraction_mode": "moderate",
+          "memory_types_requested": [
+            "emotional",
+            "preference",
+            "relational"
+          ],
+          "memories_before_filtering": 1,
+          "memories_after_filtering": 1,
+          "avg_confidence": 0.7276,
+          "processing_steps_completed": 9
+        }
+      },
+      {
+        "success": true,
+        "count": 1,
+        "memories": [
+          {
+            "content": "User feels anxious about tomorrow",
+            "type": "emotional",
+            "confidence": 0.9464571428571428
+          }
+        ],
+        "metadata": {
+          "extraction_mode": "moderate",
+          "memory_types_requested": [
+            "temporal",
+            "relational"
+          ],
+          "memories_before_filtering": 1,
+          "memories_after_filtering": 1,
+          "avg_confidence": 0.9464571428571428,
+          "processing_steps_completed": 9
+        }
+      }
+    ]
+  },
+  "goal": {
+    "success_rate": 100.0,
+    "successful": 2,
+    "total": 2,
+    "details": [
+      {
+        "success": true,
+        "count": 1,
+        "memories": [
+          {
+            "content": "User wants to learn Spanish",
+            "type": "goal",
+            "confidence": 0.8324571428571428
+          }
+        ],
+        "metadata": {
+          "extraction_mode": "moderate",
+          "memory_types_requested": [
+            "relational"
+          ],
+          "memories_before_filtering": 1,
+          "memories_after_filtering": 1,
+          "avg_confidence": 0.8324571428571428,
+          "processing_steps_completed": 9
+        }
+      },
+      {
+        "success": true,
+        "count": 1,
+        "memories": [
+          {
+            "content": "User's goal is to run a marathon",
+            "type": "goal",
+            "confidence": 0.7876
+          }
+        ],
+        "metadata": {
+          "extraction_mode": "moderate",
+          "memory_types_requested": [
+            "relational"
+          ],
+          "memories_before_filtering": 1,
+          "memories_after_filtering": 1,
+          "avg_confidence": 0.7876,
+          "processing_steps_completed": 9
+        }
+      }
+    ]
+  },
+  "skill": {
+    "success_rate": 50.0,
+    "successful": 1,
+    "total": 2,
+    "details": [
+      {
+        "success": true,
+        "count": 1,
+        "memories": [
+          {
+            "content": "User can speak three languages",
+            "type": "factual",
+            "confidence": 0.8076
+          }
+        ],
+        "metadata": {
+          "extraction_mode": "moderate",
+          "memory_types_requested": [
+            "relational"
+          ],
+          "memories_before_filtering": 1,
+          "memories_after_filtering": 1,
+          "avg_confidence": 0.8076,
+          "processing_steps_completed": 9
+        }
+      },
+      {
+        "success": true,
+        "count": 0,
+        "memories": [],
+        "metadata": {
+          "extraction_mode": "moderate",
+          "memory_types_requested": [
+            "relational"
+          ],
+          "memories_before_filtering": 2,
+          "memories_after_filtering": 0,
+          "avg_confidence": 0.0,
+          "processing_steps_completed": 9
+        }
+      }
+    ]
+  }
+}
