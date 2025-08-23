@@ -77,7 +77,8 @@ class ConnectionPool:
             conn.execute("PRAGMA cache_size = -10240")  # 10MB cache
             conn.execute("PRAGMA temp_store = MEMORY")
             conn.execute("PRAGMA mmap_size = 268435456")  # 256MB mmap
-            conn.execute("PRAGMA busy_timeout = 30000")  # 30 second timeout
+            conn.execute("PRAGMA busy_timeout = 60000")  # 60 second timeout (increased)
+            conn.execute("PRAGMA wal_autocheckpoint = 100")  # Auto-checkpoint every 100 pages
             
             # Set row factory for dict-like access
             conn.row_factory = sqlite3.Row
@@ -200,9 +201,9 @@ class DatabaseManager:
             timeout=self.timeout
         )
         
-        # Retry configuration
-        self.max_retries = 3
-        self.retry_delay = 0.1  # 100ms base delay
+        # Retry configuration (more aggressive for database locks)
+        self.max_retries = 10  # Increased retries
+        self.retry_delay = 0.05  # 50ms base delay (faster initial retry)
         
         logger.info(f"DatabaseManager initialized: {self.db_path}")
     
@@ -258,9 +259,11 @@ class DatabaseManager:
                     conn.execute(f"SAVEPOINT {savepoint}")
                 else:
                     if not read_only:
+                        # Use IMMEDIATE for write transactions to prevent lock escalation
                         conn.execute("BEGIN IMMEDIATE")
                     else:
-                        conn.execute("BEGIN")
+                        # Use DEFERRED for read-only transactions
+                        conn.execute("BEGIN DEFERRED")
                 
                 yield conn
                 
@@ -531,16 +534,35 @@ class DatabaseManager:
         """Search memories using FTS5."""
         def _search():
             with self.transaction(read_only=True) as conn:
-                cursor = conn.execute("""
-                    SELECT m.memory_id, m.user_id, m.content, m.original_message, m.category,
-                           m.confidence_score, m.timestamp, m.created_at, m.updated_at,
-                           m.metadata, m.is_active
-                    FROM memories m
-                    JOIN memories_fts fts ON m.memory_id = fts.memory_id
-                    WHERE m.user_id = ? AND m.is_active = TRUE 
-                    AND memories_fts MATCH ?
-                    ORDER BY rank LIMIT ?
-                """, (user_id, query, limit))
+                # Clean query for FTS5 - remove problematic characters
+                # Remove dates, special chars that can confuse FTS5
+                import re
+                clean_query = re.sub(r'\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}[\.\d]*', '', query)
+                clean_query = re.sub(r'[<>()"\'-]', ' ', clean_query)
+                clean_query = ' '.join(clean_query.split())  # Normalize whitespace
+                
+                if not clean_query or len(clean_query) < 2:
+                    # If query is too short after cleaning, use simple LIKE search
+                    cursor = conn.execute("""
+                        SELECT memory_id, user_id, content, original_message, category,
+                               confidence_score, timestamp, created_at, updated_at,
+                               metadata, is_active
+                        FROM memories
+                        WHERE user_id = ? AND is_active = TRUE 
+                        AND content LIKE ?
+                        ORDER BY confidence_score DESC LIMIT ?
+                    """, (user_id, f'%{query[:20]}%', limit))
+                else:
+                    cursor = conn.execute("""
+                        SELECT m.memory_id, m.user_id, m.content, m.original_message, m.category,
+                               m.confidence_score, m.timestamp, m.created_at, m.updated_at,
+                               m.metadata, m.is_active
+                        FROM memories m
+                        JOIN memories_fts fts ON m.memory_id = fts.memory_id
+                        WHERE m.user_id = ? AND m.is_active = TRUE 
+                        AND memories_fts MATCH ?
+                        ORDER BY rank LIMIT ?
+                    """, (user_id, clean_query, limit))
                 
                 memories = []
                 for row in cursor.fetchall():

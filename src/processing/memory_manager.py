@@ -10,6 +10,7 @@ This module provides the main interface for memory operations, integrating:
 - Transaction management
 """
 import uuid
+import json
 from datetime import datetime
 from typing import List, Dict, Any, Optional, Union, Tuple
 from dataclasses import dataclass, field
@@ -167,7 +168,7 @@ class MemoryManager:
             raise ValidationError(f"Validation error: {e}")
     
     def store_memory(self, memory: Memory, user_preferences: Optional[UserPreferences] = None,
-                    detect_conflicts: bool = True) -> MemoryOperationResult:
+                    detect_conflicts: bool = True, _conn=None) -> MemoryOperationResult:
         """
         Store a memory with conflict detection and resolution.
         
@@ -175,6 +176,7 @@ class MemoryManager:
             memory: Memory object to store
             user_preferences: User preferences for conflict resolution
             detect_conflicts: Whether to perform conflict detection
+            _conn: Optional database connection to reuse (internal use)
             
         Returns:
             MemoryOperationResult with operation details
@@ -191,8 +193,17 @@ class MemoryManager:
             # Ensure user exists (auto-create if needed)
             self._ensure_user_exists(memory.user_id)
             
-            # Check if memory already exists
-            existing = self.get_memory(memory.memory_id)
+            # Check if memory already exists (use provided connection if available)
+            if _conn:
+                # Use provided connection for the check
+                cursor = _conn.execute(
+                    "SELECT memory_id FROM memories WHERE memory_id = ?",
+                    (memory.memory_id,)
+                )
+                existing = cursor.fetchone()
+            else:
+                existing = self.get_memory(memory.memory_id)
+            
             if existing:
                 logger.warning(f"Memory {memory.memory_id} already exists")
                 return MemoryOperationResult(
@@ -204,8 +215,11 @@ class MemoryManager:
             affected_memories = []
             
             if detect_conflicts:
-                # Find potential conflicts
-                similar_memories = self._find_similar_memories(memory)
+                # Find potential conflicts (use provided connection if available)
+                if _conn:
+                    similar_memories = self._find_similar_memories_with_conn(memory, _conn)
+                else:
+                    similar_memories = self._find_similar_memories(memory)
                 
                 if similar_memories:
                     conflicts = self.conflict_detector.detect_conflicts(memory, similar_memories)
@@ -398,7 +412,8 @@ class MemoryManager:
                 store_result = self.store_memory(
                     memory=memory,
                     user_preferences=user_preferences,
-                    detect_conflicts=detect_conflicts
+                    detect_conflicts=detect_conflicts,
+                    _conn=None  # Let each individual store manage its own transaction
                 )
                 
                 if store_result.result == StorageResult.CREATED or store_result.result == StorageResult.UPDATED:
@@ -698,6 +713,52 @@ class MemoryManager:
         except Exception as e:
             logger.error(f"Batch operation failed: {e}")
             raise MemoryOperationError(f"Batch operation failed: {e}")
+    
+    def _find_similar_memories_with_conn(self, memory: Memory, conn, limit: int = 10) -> List[Memory]:
+        """
+        Find memories similar to the given memory using provided connection.
+        
+        Args:
+            memory: Memory to find similar memories for
+            conn: Database connection to use
+            limit: Maximum number of similar memories to return
+            
+        Returns:
+            List of similar Memory objects
+        """
+        try:
+            # Extract simple keywords from content for FTS search
+            content_words = memory.content[:100].replace("'", "").replace('"', '').replace(",", " ").replace("(", "").replace(")", "").strip()
+            
+            if len(content_words) < 3:
+                return []
+            
+            # Direct query using provided connection
+            # Note: Avoid using FTS for simple similarity check
+            cursor = conn.execute("""
+                SELECT * FROM memories
+                WHERE user_id = ? 
+                AND memory_id != ?
+                AND is_active = 1
+                AND category = ?
+                ORDER BY confidence_score DESC
+                LIMIT ?
+            """, (memory.user_id, memory.memory_id, memory.category, limit))
+            
+            similar_memories = []
+            for row in cursor:
+                memory_dict = dict(row)
+                if memory_dict.get('metadata'):
+                    memory_dict['metadata'] = json.loads(memory_dict['metadata'])
+                if memory_dict.get('timestamp') and isinstance(memory_dict['timestamp'], str):
+                    memory_dict['timestamp'] = datetime.fromisoformat(memory_dict['timestamp'])
+                similar_memories.append(Memory(**memory_dict))
+            
+            return similar_memories
+            
+        except Exception as e:
+            logger.warning(f"Error finding similar memories with connection: {e}")
+            return []
     
     def _find_similar_memories(self, memory: Memory, limit: int = 10) -> List[Memory]:
         """

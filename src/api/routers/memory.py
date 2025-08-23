@@ -471,6 +471,99 @@ async def list_memories(
         )
 
 
+@router.get("/memory/export", response_model=MemoryExportResponse)
+async def export_memories(
+    user_id: str = Query(..., description="User ID"),
+    format: ExportFormat = Query(ExportFormat.JSON, description="Export format"),
+    include_metadata: bool = Query(False, description="Include metadata"),
+    category: Optional[str] = Query(None, description="Category filter"),
+    from_date: Optional[datetime] = Query(None, description="Start date filter"),
+    to_date: Optional[datetime] = Query(None, description="End date filter"),
+    min_confidence: Optional[float] = Query(None, ge=0.0, le=1.0, description="Min confidence"),
+    max_confidence: Optional[float] = Query(None, ge=0.0, le=1.0, description="Max confidence"),
+    search_engine=Depends(get_search_engine)
+):
+    """
+    Export memories in various formats.
+    
+    Args:
+        user_id: User identifier
+        format: Export format (json, csv, markdown, text)
+        include_metadata: Whether to include metadata
+        category: Optional category filter
+        from_date: Optional start date filter
+        to_date: Optional end date filter
+        min_confidence: Optional minimum confidence filter
+        max_confidence: Optional maximum confidence filter
+        search_engine: Search engine dependency
+        
+    Returns:
+        MemoryExportResponse: Exported data in specified format
+    """
+    start_time = time.time()
+    
+    try:
+        logger.info(f"Exporting memories for user {user_id} in {format} format")
+        
+        # Convert API parameters to search engine objects
+        filters = _convert_search_filter(
+            category=category,
+            from_date=from_date,
+            to_date=to_date,
+            min_confidence=min_confidence,
+            max_confidence=max_confidence
+        )
+        
+        # Map API format to search engine format
+        from search.search_engine import ExportFormat as SearchExportFormat
+        format_map = {
+            ExportFormat.JSON: SearchExportFormat.JSON,
+            ExportFormat.CSV: SearchExportFormat.CSV,
+            ExportFormat.MARKDOWN: SearchExportFormat.MARKDOWN,
+            ExportFormat.TEXT: SearchExportFormat.TEXT
+        }
+        
+        # Export memories
+        result = search_engine.export_memories(
+            user_id=user_id,
+            export_format=format_map[format],
+            filters=filters,
+            include_metadata=include_metadata
+        )
+        
+        execution_time = int((time.time() - start_time) * 1000)
+        
+        logger.info(f"Exported {result['memory_count']} memories in {execution_time}ms")
+        
+        return MemoryExportResponse(
+            success=result['success'],
+            data=result['data'],
+            format=format,
+            include_metadata=include_metadata,
+            export_date=datetime.now(),
+            memory_count=result['memory_count'],
+            filters_applied=FiltersApplied(
+                category=category,
+                from_date=from_date,
+                to_date=to_date,
+                min_confidence=min_confidence,
+                max_confidence=max_confidence
+            ),
+            execution_time_ms=execution_time,
+            metadata={
+                "export_timestamp": datetime.now().isoformat(),
+                "original_execution_time": result['execution_time']
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Export memories error: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to export memories: {str(e)}"
+        )
+
+
 @router.get("/memory/{memory_id}", response_model=MemoryDetailResponse)
 async def get_memory(
     memory_id: str = Path(..., description="Memory ID"),
@@ -582,95 +675,3 @@ async def delete_memory(
             detail=f"Failed to delete memory: {str(e)}"
         )
 
-
-@router.get("/memory/export", response_model=MemoryExportResponse)
-async def export_memories(
-    user_id: str = Query(..., description="User ID"),
-    format: ExportFormat = Query(ExportFormat.JSON, description="Export format"),
-    include_metadata: bool = Query(False, description="Include metadata"),
-    category: Optional[str] = Query(None, description="Category filter"),
-    from_date: Optional[datetime] = Query(None, description="Start date filter"),
-    to_date: Optional[datetime] = Query(None, description="End date filter"),
-    min_confidence: Optional[float] = Query(None, ge=0.0, le=1.0, description="Min confidence"),
-    max_confidence: Optional[float] = Query(None, ge=0.0, le=1.0, description="Max confidence"),
-    search_engine=Depends(get_search_engine)
-):
-    """
-    Export memories in various formats.
-    
-    Args:
-        user_id: User identifier
-        format: Export format (json, csv, markdown, text)
-        include_metadata: Whether to include metadata
-        category: Optional category filter
-        from_date: Optional start date filter
-        to_date: Optional end date filter
-        min_confidence: Optional minimum confidence filter
-        max_confidence: Optional maximum confidence filter
-        search_engine: Search engine dependency
-        
-    Returns:
-        MemoryExportResponse: Exported data in specified format
-    """
-    start_time = time.time()
-    
-    try:
-        logger.info(f"Exporting memories for user {user_id} in {format} format")
-        
-        # Convert API parameters to search engine objects
-        filters = _convert_search_filter(
-            category=category,
-            from_date=from_date,
-            to_date=to_date,
-            min_confidence=min_confidence,
-            max_confidence=max_confidence
-        )
-        
-        # Map API format to search engine format
-        from search.search_engine import ExportFormat as SearchExportFormat
-        format_map = {
-            ExportFormat.JSON: SearchExportFormat.JSON,
-            ExportFormat.CSV: SearchExportFormat.CSV,
-            ExportFormat.MARKDOWN: SearchExportFormat.MARKDOWN,
-            ExportFormat.TEXT: SearchExportFormat.TEXT
-        }
-        
-        # Export memories
-        result = search_engine.export_memories(
-            user_id=user_id,
-            export_format=format_map[format],
-            filters=filters,
-            include_metadata=include_metadata
-        )
-        
-        execution_time = int((time.time() - start_time) * 1000)
-        
-        logger.info(f"Exported {result['memory_count']} memories in {execution_time}ms")
-        
-        return MemoryExportResponse(
-            success=result['success'],
-            data=result['data'],
-            format=format,
-            include_metadata=include_metadata,
-            export_date=datetime.now(),
-            memory_count=result['memory_count'],
-            filters_applied=FiltersApplied(
-                category=category,
-                from_date=from_date,
-                to_date=to_date,
-                min_confidence=min_confidence,
-                max_confidence=max_confidence
-            ),
-            execution_time_ms=execution_time,
-            metadata={
-                "export_timestamp": datetime.now().isoformat(),
-                "original_execution_time": result['execution_time']
-            }
-        )
-        
-    except Exception as e:
-        logger.error(f"Export memories error: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to export memories: {str(e)}"
-        )

@@ -72,9 +72,7 @@ ehthumbs.db
 Thumbs.db
 
 # Project specific
-data/*.db
-data/*.sqlite
-data/*.sqlite3
+data/
 logs/*.log
 logs/*.out
 
