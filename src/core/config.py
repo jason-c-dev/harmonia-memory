@@ -242,60 +242,24 @@ class ConfigLoader:
             raise ValueError(f"Failed to load configuration file: {e}")
     
     def _apply_env_overrides(self, config_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Apply environment variable overrides to configuration."""
+        """Apply environment variable overrides for secrets only."""
+        # Only support environment variables for secrets that shouldn't be in config.yaml
         env_mappings = {
-            # Database
-            'DATABASE_PATH': ('database', 'path'),
-            'DATABASE_BACKUP_ENABLED': ('database', 'backup_enabled'),
-            
-            # Ollama
-            'OLLAMA_HOST': ('ollama', 'host'),
-            'OLLAMA_MODEL': ('ollama', 'model'),
-            'OLLAMA_TIMEOUT': ('ollama', 'timeout'),
-            
-            # Server
-            'API_HOST': ('server', 'host'),
-            'API_PORT': ('server', 'port'),
-            'API_WORKERS': ('server', 'workers'),
-            
-            # Security
-            'API_SECRET_KEY': ('security', 'api_secret_key'),
-            'API_KEY_REQUIRED': ('security', 'api_key_required'),
-            'RATE_LIMIT_ENABLED': ('security', 'rate_limit', 'enabled'),
-            
-            # Logging
-            'LOG_LEVEL': ('logging', 'level'),
-            'LOG_FILE_ENABLED': ('logging', 'file', 'enabled'),
-            'LOG_CONSOLE_ENABLED': ('logging', 'console', 'enabled'),
-            
-            # Development
-            'DEBUG': ('development', 'debug'),
-            'DEVELOPMENT_MODE': ('development', 'debug'),
-            'MOCK_LLM': ('development', 'mock_llm'),
-            
-            # Memory
-            'MEMORY_CONFIDENCE_THRESHOLD': ('memory', 'confidence_threshold'),
-            'CONFLICT_RESOLUTION_STRATEGY': ('memory', 'conflict_resolution_strategy'),
-            'DEFAULT_TIMEZONE': ('memory', 'default_timezone'),
-            
-            # Cache
-            'CACHE_ENABLED': ('cache', 'enabled'),
-            'MEMORY_CACHE_SIZE': ('cache', 'memory_cache_size'),
-            'SEARCH_CACHE_TTL': ('cache', 'search_cache_ttl'),
-            
-            # Monitoring
-            'METRICS_ENABLED': ('monitoring', 'metrics_enabled'),
-            'HEALTH_CHECK_ENABLED': ('monitoring', 'health_check_enabled'),
-            
-            # Export
-            'MAX_EXPORT_SIZE': ('export', 'max_export_size'),
-            'EXPORT_COMPRESSION': ('export', 'compression_enabled'),
+            # Security - Secrets only
+            'HARMONIA_API_SECRET_KEY': ('security', 'api_secret_key'),
+            'HARMONIA_API_KEYS': ('security', 'api_keys'),  # Comma-separated list
+            'HARMONIA_API_KEY_REQUIRED': ('security', 'api_key_required'),
         }
         
         for env_var, config_path in env_mappings.items():
             env_value = os.getenv(env_var)
             if env_value is not None:
-                self._set_nested_value(config_data, config_path, self._convert_env_value(env_value))
+                # Special handling for API keys list
+                if env_var == 'HARMONIA_API_KEYS':
+                    value = [key.strip() for key in env_value.split(',') if key.strip()]
+                else:
+                    value = self._convert_env_value(env_value)
+                self._set_nested_value(config_data, config_path, value)
         
         return config_data
     

@@ -383,29 +383,33 @@ class HarmoniaClient:
         
         return self._make_request('GET', '/api/v1/memory/list', params=params)
     
-    def get_memory(self, memory_id: str) -> HarmoniaResponse:
+    def get_memory(self, memory_id: str, user_id: str) -> HarmoniaResponse:
         """
         Get a specific memory by ID.
         
         Args:
             memory_id: Memory identifier
+            user_id: User identifier
             
         Returns:
             HarmoniaResponse: Memory details
         """
-        return self._make_request('GET', f'/api/v1/memory/{memory_id}')
+        params = {'user_id': user_id}
+        return self._make_request('GET', f'/api/v1/memory/{memory_id}', params=params)
     
-    def delete_memory(self, memory_id: str) -> HarmoniaResponse:
+    def delete_memory(self, memory_id: str, user_id: str) -> HarmoniaResponse:
         """
         Delete a specific memory by ID.
         
         Args:
             memory_id: Memory identifier
+            user_id: User identifier
             
         Returns:
             HarmoniaResponse: Deletion confirmation
         """
-        return self._make_request('DELETE', f'/api/v1/memory/{memory_id}')
+        params = {'user_id': user_id}
+        return self._make_request('DELETE', f'/api/v1/memory/{memory_id}', params=params)
     
     def export_memories(
         self,

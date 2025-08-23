@@ -607,6 +607,10 @@ async def get_memory(
             }
         )
         
+    except HTTPException:
+        # Re-raise HTTPException without catching it
+        raise
+    
     except MemoryNotFoundError as e:
         logger.warning(f"Memory not found: {memory_id}")
         raise HTTPException(
@@ -661,6 +665,10 @@ async def delete_memory(
             }
         )
         
+    except HTTPException:
+        # Re-raise HTTPException without catching it
+        raise
+    
     except MemoryNotFoundError as e:
         logger.warning(f"Memory not found for deletion: {memory_id}")
         raise HTTPException(
