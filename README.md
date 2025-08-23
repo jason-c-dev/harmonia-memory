@@ -215,7 +215,7 @@ Harmonia delivers a comprehensive memory storage solution with these verified ca
 
 Harmonia has been thoroughly tested and verified for production use:
 
-- **✅ 350+ Tests Passing**: Complete test suite with 95%+ coverage
+- **✅ 350+ Tests Passing**: Complete test suite with 95%+ coverage ([detailed results](./docs/test_results.md))
 - **✅ All Core Features Working**: Memory extraction, search, export, conflict resolution
 - **✅ Performance Verified**: Sub-10ms search, <100ms memory storage including LLM processing
 - **✅ Production Features**: Authentication, rate limiting, monitoring, comprehensive error handling
@@ -686,8 +686,7 @@ Harmonia includes extensive documentation covering all aspects of the system:
 - **[Client Reference](./docs/client_reference.md)**: Comprehensive Python client SDK guide  
 - **[Architecture Guide](./docs/architecture.md)**: System architecture and component design
 - **[Configuration Guide](./docs/configuration.md)**: Complete configuration reference
-- **[API Testing Guide](./docs/api_testing_guide.md)**: Step-by-step API testing with curl
-- **[Prompt Engineering](./docs/prompt_engineering.md)**: LLM prompt design and optimization
+- **[Test Results](./docs/test_results.md)**: Comprehensive test suite results and verification report
 
 ### 🚀 **Interactive Documentation**
 - **Swagger UI**: Visit `/docs` when server is running for interactive API exploration
