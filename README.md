@@ -690,6 +690,7 @@ Harmonia includes extensive documentation covering all aspects of the system:
 - **[Architecture Guide](./docs/architecture.md)**: System architecture and component design
 - **[Configuration Guide](./docs/configuration.md)**: Complete configuration reference
 - **[Test Results](./docs/final_comprehensive_test_report.md)**: Comprehensive test suite results and verification report
+- **[API User Guide Test Report](./docs/test_api_user_guide_report.md)**: Test results for all API User Guide examples
 
 ### 🚀 **Interactive Documentation**
 - **Swagger UI**: Visit `/docs` when server is running for interactive API exploration
