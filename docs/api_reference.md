@@ -4,6 +4,8 @@
 
 The Harmonia Memory Storage API provides a RESTful interface for storing, searching, and managing intelligent memory data extracted from natural language messages. The API is built with FastAPI and provides comprehensive memory management capabilities with full-text search, conflict resolution, and export functionality.
 
+> **📖 For comprehensive usage examples with all 10 memory types and advanced features, see the [API User Guide](api_user_guide.md)**
+
 **Base URL**: `http://localhost:8000`  
 **API Version**: `v1`  
 **Content Type**: `application/json`

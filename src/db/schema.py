@@ -255,6 +255,104 @@ class DatabaseSchema:
             return False
     
     @classmethod
+    def validate_user_schema(cls, db_path: str) -> bool:
+        """
+        Validate that a per-user database has the correct schema.
+        
+        Args:
+            db_path: Path to the SQLite database file
+            
+        Returns:
+            True if schema is valid, False otherwise
+        """
+        try:
+            with sqlite3.connect(db_path) as conn:
+                cursor = conn.cursor()
+                
+                # Check that all required tables exist (without users table)
+                cursor.execute("""
+                    SELECT name FROM sqlite_master 
+                    WHERE type='table' AND name NOT LIKE 'sqlite_%'
+                """)
+                tables = {row[0] for row in cursor.fetchall()}
+                
+                required_tables = set(cls.CREATE_TABLES_PER_USER.keys()) | {'memories_fts'}
+                missing_tables = required_tables - tables
+                
+                if missing_tables:
+                    logger.error(f"Missing required tables: {missing_tables}")
+                    return False
+                
+                # Check FTS5 table exists and is functional
+                cursor.execute("SELECT COUNT(*) FROM memories_fts LIMIT 1")
+                
+                # Check schema version
+                cursor.execute("SELECT MAX(version) FROM schema_version")
+                current_version = cursor.fetchone()[0]
+                
+                if current_version != cls.SCHEMA_VERSION:
+                    logger.warning(f"Schema version mismatch: {current_version} != {cls.SCHEMA_VERSION}")
+                    return False
+                
+                logger.info("Per-user database schema validation passed")
+                return True
+                
+        except sqlite3.Error as e:
+            logger.error(f"Per-user schema validation failed: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"Unexpected error during per-user schema validation: {e}")
+            return False
+
+    @classmethod
+    def test_user_fts_functionality(cls, db_path: str) -> bool:
+        """
+        Test that FTS5 search functionality is working in a per-user database.
+        
+        Args:
+            db_path: Path to the SQLite database file
+            
+        Returns:
+            True if FTS is functional, False otherwise
+        """
+        try:
+            with sqlite3.connect(db_path) as conn:
+                cursor = conn.cursor()
+                
+                # Insert test data
+                test_memory_id = "test_fts_memory"
+                cursor.execute("""
+                    INSERT OR REPLACE INTO memories 
+                    (memory_id, content, category) 
+                    VALUES (?, 'This is a test memory for FTS functionality', 'test')
+                """, (test_memory_id,))
+                
+                # Test FTS search
+                cursor.execute("""
+                    SELECT memory_id FROM memories_fts 
+                    WHERE memories_fts MATCH 'test'
+                """)
+                results = cursor.fetchall()
+                
+                # Clean up test data
+                cursor.execute("DELETE FROM memories WHERE memory_id = ?", (test_memory_id,))
+                conn.commit()
+                
+                if results:
+                    logger.info("Per-user FTS5 functionality test passed")
+                    return True
+                else:
+                    logger.error("Per-user FTS5 functionality test failed - no search results")
+                    return False
+                    
+        except sqlite3.Error as e:
+            logger.error(f"Per-user FTS functionality test failed: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"Unexpected error during per-user FTS test: {e}")
+            return False
+
+    @classmethod
     def validate_schema(cls, db_path: str) -> bool:
         """
         Validate that the database has the correct schema.
@@ -325,6 +423,225 @@ class DatabaseSchema:
             logger.error(f"Failed to get table info for {table_name}: {e}")
             return None
     
+    # Per-user database schema (without user_id columns and foreign keys)
+    CREATE_TABLES_PER_USER = {
+        'memories': """
+            CREATE TABLE IF NOT EXISTS memories (
+                memory_id TEXT PRIMARY KEY,
+                content TEXT NOT NULL,
+                original_message TEXT,
+                category TEXT,
+                confidence_score REAL,
+                timestamp TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                metadata JSON,
+                embedding BLOB,
+                is_active BOOLEAN DEFAULT TRUE
+            )
+        """,
+        
+        'memory_updates': """
+            CREATE TABLE IF NOT EXISTS memory_updates (
+                update_id TEXT PRIMARY KEY,
+                memory_id TEXT NOT NULL,
+                previous_content TEXT,
+                new_content TEXT,
+                update_type TEXT,
+                updated_by TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                metadata JSON,
+                FOREIGN KEY (memory_id) REFERENCES memories(memory_id) ON DELETE CASCADE
+            )
+        """,
+        
+        'sessions': """
+            CREATE TABLE IF NOT EXISTS sessions (
+                session_id TEXT PRIMARY KEY,
+                started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                ended_at TIMESTAMP,
+                message_count INTEGER DEFAULT 0,
+                memories_created INTEGER DEFAULT 0,
+                metadata JSON
+            )
+        """,
+        
+        'categories': """
+            CREATE TABLE IF NOT EXISTS categories (
+                category_id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                description TEXT,
+                parent_category_id TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (parent_category_id) REFERENCES categories(category_id)
+            )
+        """,
+        
+        'schema_version': """
+            CREATE TABLE IF NOT EXISTS schema_version (
+                version INTEGER PRIMARY KEY,
+                applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                description TEXT
+            )
+        """
+    }
+    
+    # Indexes for per-user databases (without user_id indexes)
+    CREATE_INDEXES_PER_USER = [
+        "CREATE INDEX IF NOT EXISTS idx_memories_timestamp ON memories(timestamp)",
+        "CREATE INDEX IF NOT EXISTS idx_memories_category ON memories(category)",
+        "CREATE INDEX IF NOT EXISTS idx_memories_created_at ON memories(created_at)",
+        "CREATE INDEX IF NOT EXISTS idx_memories_is_active ON memories(is_active)",
+        "CREATE INDEX IF NOT EXISTS idx_memory_updates_memory_id ON memory_updates(memory_id)",
+        "CREATE INDEX IF NOT EXISTS idx_memory_updates_updated_at ON memory_updates(updated_at)",
+        "CREATE INDEX IF NOT EXISTS idx_sessions_started_at ON sessions(started_at)",
+        "CREATE INDEX IF NOT EXISTS idx_categories_parent ON categories(parent_category_id)"
+    ]
+    
+    def create_tables_without_user_id(self, conn):
+        """Create tables for per-user database (without user_id columns)."""
+        for table_name, create_sql in self.CREATE_TABLES_PER_USER.items():
+            logger.debug(f"Creating table: {table_name}")
+            conn.execute(create_sql)
+    
+    def create_indexes_without_user_id(self, conn):
+        """Create indexes for per-user database (without user_id indexes)."""
+        for index_sql in self.CREATE_INDEXES_PER_USER:
+            conn.execute(index_sql)
+    
+    def create_fts_tables(self, conn):
+        """Create FTS virtual tables."""
+        conn.execute(self.CREATE_FTS_TABLE)
+    
+    def create_fts_triggers(self, conn):
+        """Create FTS synchronization triggers."""
+        for trigger_sql in self.CREATE_TRIGGERS:
+            conn.execute(trigger_sql)
+    
+    def create_fts_triggers_per_user(self, conn):
+        """Create FTS synchronization triggers for per-user databases (without user table triggers)."""
+        # Only create FTS-related triggers, skip user table triggers
+        fts_triggers = [
+            """
+            CREATE TRIGGER IF NOT EXISTS update_memories_timestamp
+            AFTER UPDATE ON memories
+            FOR EACH ROW
+            BEGIN
+                UPDATE memories SET updated_at = CURRENT_TIMESTAMP WHERE memory_id = NEW.memory_id;
+            END
+            """,
+            
+            """
+            CREATE TRIGGER IF NOT EXISTS sync_memories_fts_insert
+            AFTER INSERT ON memories
+            FOR EACH ROW
+            BEGIN
+                INSERT INTO memories_fts(memory_id, content, category)
+                VALUES(NEW.memory_id, NEW.content, COALESCE(NEW.category, ''));
+            END
+            """,
+            
+            """
+            CREATE TRIGGER IF NOT EXISTS sync_memories_fts_update
+            AFTER UPDATE ON memories
+            FOR EACH ROW
+            BEGIN
+                UPDATE memories_fts
+                SET content = NEW.content, category = COALESCE(NEW.category, '')
+                WHERE memory_id = NEW.memory_id;
+            END
+            """,
+            
+            """
+            CREATE TRIGGER IF NOT EXISTS sync_memories_fts_delete
+            AFTER DELETE ON memories
+            FOR EACH ROW
+            BEGIN
+                DELETE FROM memories_fts WHERE memory_id = OLD.memory_id;
+            END
+            """
+        ]
+        
+        for trigger_sql in fts_triggers:
+            conn.execute(trigger_sql)
+    
+    @classmethod
+    def initialize_user_database(cls, db_path: str) -> bool:
+        """
+        Initialize a per-user database with schema optimized for single-user access.
+        
+        Args:
+            db_path: Path to the SQLite database file
+            
+        Returns:
+            True if initialization successful, False otherwise
+        """
+        try:
+            # Ensure directory exists
+            db_file = Path(db_path)
+            db_file.parent.mkdir(parents=True, exist_ok=True)
+            
+            logger.info(f"Initializing user database at: {db_path}")
+            
+            with sqlite3.connect(db_path) as conn:
+                # Enable foreign keys
+                conn.execute("PRAGMA foreign_keys = ON")
+                
+                # Enable WAL mode for better concurrency
+                conn.execute("PRAGMA journal_mode = WAL")
+                
+                # Set reasonable cache size (5MB for smaller per-user DBs)
+                conn.execute("PRAGMA cache_size = -5120")
+                
+                # Create schema instance for instance methods
+                schema = cls()
+                
+                # Create all tables
+                logger.info("Creating database tables...")
+                schema.create_tables_without_user_id(conn)
+                
+                # Create FTS table
+                logger.info("Creating full-text search table...")
+                schema.create_fts_tables(conn)
+                
+                # Create indexes
+                logger.info("Creating database indexes...")
+                schema.create_indexes_without_user_id(conn)
+                
+                # Create triggers
+                logger.info("Creating database triggers...")
+                schema.create_fts_triggers_per_user(conn)
+                
+                # Insert default categories
+                logger.info("Inserting default data...")
+                conn.execute("""
+                    INSERT OR IGNORE INTO categories (category_id, name, description) VALUES
+                    ('personal', 'Personal', 'Personal information and preferences'),
+                    ('work', 'Work', 'Work-related information and tasks'),
+                    ('relationships', 'Relationships', 'Information about people and relationships'),
+                    ('preferences', 'Preferences', 'User preferences and settings'),
+                    ('events', 'Events', 'Scheduled events and appointments'),
+                    ('facts', 'Facts', 'General facts and knowledge'),
+                    ('other', 'Other', 'Uncategorized memories')
+                """)
+                
+                # Insert schema version
+                conn.execute(f"""
+                    INSERT OR IGNORE INTO schema_version (version, description) VALUES
+                    ({cls.SCHEMA_VERSION}, 'Per-user database schema with FTS5 search')
+                """)
+                
+                conn.commit()
+                logger.info("User database initialization completed successfully")
+                return True
+                
+        except sqlite3.Error as e:
+            logger.error(f"User database initialization failed: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"Unexpected error during user database initialization: {e}")
+            return False
+
     @classmethod
     def test_fts_functionality(cls, db_path: str) -> bool:
         """

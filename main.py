@@ -48,18 +48,42 @@ async def lifespan(app: FastAPI):
         logger = logging.getLogger(__name__)
         logger.info("Starting Harmonia Memory Storage API...")
         
-        # Initialize database manager
+        # Initialize multi-database manager
+        from db.multi_db_manager import MultiDatabaseManager
+        multi_db_manager = MultiDatabaseManager(
+            base_path=config.database.path,
+            pool_size_per_db=max(5, config.database.pool_size // 4)
+        )
+        
+        # Keep the old single-database system for backward compatibility and health checks
         from db.manager import DatabaseManager
         db_manager = DatabaseManager(
             db_path=config.database.path,
             pool_size=config.database.pool_size
         )
         
-        # Initialize search engine
+        # Initialize search engine with the original database manager for now
         from search.search_engine import SearchEngine
         search_engine = SearchEngine(db_manager=db_manager)
         
-        # Initialize memory manager
+        # Initialize processing components (shared across users)
+        from processing.memory_processor import MemoryProcessor
+        from processing.conflict_detector import ConflictDetector
+        from processing.conflict_resolver import ConflictResolver
+        from processing.temporal_resolver import TemporalResolver
+        from llm.ollama_client import OllamaClient
+        
+        ollama_client = OllamaClient(
+            host=config.ollama.host,
+            default_model=config.ollama.model
+        )
+        
+        memory_processor = MemoryProcessor(ollama_client=ollama_client)
+        conflict_detector = ConflictDetector()
+        conflict_resolver = ConflictResolver()
+        temporal_resolver = TemporalResolver()
+        
+        # Initialize legacy memory manager for compatibility
         from processing.memory_manager import MemoryManager
         memory_manager = MemoryManager(
             db_manager=db_manager
@@ -68,9 +92,15 @@ async def lifespan(app: FastAPI):
         # Store in app state for dependency injection
         app_state = get_app_state()
         app_state['config'] = config
-        app_state['db_manager'] = db_manager
-        app_state['memory_manager'] = memory_manager
+        app_state['db_manager'] = db_manager  # Legacy single DB
+        app_state['multi_db_manager'] = multi_db_manager  # New multi-user DB system
+        app_state['memory_manager'] = memory_manager  # Legacy memory manager
         app_state['search_engine'] = search_engine
+        app_state['ollama_client'] = ollama_client
+        app_state['memory_processor'] = memory_processor
+        app_state['conflict_detector'] = conflict_detector
+        app_state['conflict_resolver'] = conflict_resolver
+        app_state['temporal_resolver'] = temporal_resolver
         
         logger.info("Application startup complete")
         
@@ -88,10 +118,14 @@ async def lifespan(app: FastAPI):
         
         # Cleanup resources
         app_state = get_app_state()
+        if 'multi_db_manager' in app_state:
+            app_state['multi_db_manager'].close_all()
         if 'db_manager' in app_state:
             app_state['db_manager'].close()
         if 'search_engine' in app_state:
             app_state['search_engine'].close()
+        if 'ollama_client' in app_state:
+            app_state['ollama_client'].close()
         
         logger.info("Application shutdown complete")
         

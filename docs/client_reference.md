@@ -4,6 +4,8 @@
 
 The Harmonia Python client provides a comprehensive, production-ready interface for interacting with the Harmonia Memory Storage API. It includes automatic retry logic, proper error handling, type hints, and support for all API endpoints.
 
+> **📖 For comprehensive usage examples including all 10 memory types, see the [API User Guide](api_user_guide.md)**
+
 ## Installation
 
 The client is included with the Harmonia system. For standalone use:

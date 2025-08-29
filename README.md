@@ -58,7 +58,7 @@
 
 ### **LLM Integration** ✅
 - **Ollama Client**: Production-ready client with retry logic, health monitoring, and statistics
-- **Memory Extraction**: 12 memory types (Personal, Factual, Emotional, etc.) with intelligent prompts
+- **Memory Extraction**: 10 memory types (Personal, Factual, Emotional, Procedural, Episodic, Relational, Preference, Goal, Skill, Temporal) with intelligent prompts
 - **Prompt System**: Template engine with versioning, context injection, and validation
 - **Memory Processing**: 9-step pipeline with preprocessing, entity extraction, and confidence scoring
 - **Error Handling**: Comprehensive exception handling with exponential backoff retry logic
@@ -109,6 +109,8 @@
 - Complete API server with authentication, rate limiting, and comprehensive endpoints
 - Python client SDK with retry logic, error handling, and extensive documentation
 - All core functionality tested and optimized for production use
+- **Per-User Database Isolation**: Each user gets their own SQLite database for complete data isolation
+- **Comprehensive API Guide**: See [API User Guide](docs/api_user_guide.md) for detailed usage examples
 
 ## 📋 Prerequisites
 
@@ -682,11 +684,12 @@ python -c "import sys; print(sys.path)"
 Harmonia includes extensive documentation covering all aspects of the system:
 
 ### 📚 **Core Documentation**
+- **[🆕 API User Guide](./docs/api_user_guide.md)**: Comprehensive guide with examples for all 10 memory types and features
 - **[API Reference](./docs/api_reference.md)**: Complete REST API documentation with examples
 - **[Client Reference](./docs/client_reference.md)**: Comprehensive Python client SDK guide  
 - **[Architecture Guide](./docs/architecture.md)**: System architecture and component design
 - **[Configuration Guide](./docs/configuration.md)**: Complete configuration reference
-- **[Test Results](./docs/test_results.md)**: Comprehensive test suite results and verification report
+- **[Test Results](./docs/final_comprehensive_test_report.md)**: Comprehensive test suite results and verification report
 
 ### 🚀 **Interactive Documentation**
 - **Swagger UI**: Visit `/docs` when server is running for interactive API exploration
